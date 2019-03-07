@@ -21,6 +21,7 @@ import io.reactivex.ObservableEmitter;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 public class BasicExample extends RxAppCompatActivity {
     private static final String TAG = "RxJava2";
@@ -83,7 +84,34 @@ public class BasicExample extends RxAppCompatActivity {
         // [07] fromIterable()
         //startExample07();
 
+        // [08] Thread Test
+        //startExample8();
 
+        // [08] Thread Test
+    }
+
+    private void startExample8() {
+        // Scheduler.computation() : 간단한 연산이나 콜백처리에 사용. (별도의 스레드풀. 최대 CPU 갯수의 스레드풀이 순환하며 실행)
+        // Scheduler.from(excutor) : 특정 executor 를 스케줄러로 사용
+        // Scheduler.io() : 동기 i/o를 별도로 처리시켜 비동기 효율을 얻기위한 스케줄러. 자체 chachedThreadPool 사용. api 네트워크 호출에 유용
+        // Scheduler.newThread() : 새로운 스레드 생성.
+        // AndroidScheduler.mainThread() : 안드로이드 UI 스레드에서 실행..
+
+        Observable<String> obv = Observable.defer( () -> {
+
+            Log.i(TAG, ":"+Thread.currentThread().getName()+": defer생성시 쓰레드");
+            return Observable.just("Here i am.");
+
+        });
+
+        obv.subscribeOn(Schedulers.computation())   // 발행자 (Observable) Thread 를 지정 - 옵져버블이 뿌려주는 쓰레드
+                .observeOn(Schedulers.newThread()) // 구독자 (Observer, subscriber) Thread 를 지정 - 옵져버가 받는 곳의 쓰레드
+                .subscribe(
+                        s -> Log.i(TAG, ":"+Thread.currentThread().getName()+": 구독시 옵져버의 쓰레드= "+s),
+                        throwable -> throwable.printStackTrace(),
+                        ()-> Log.i(TAG, ":"+Thread.currentThread().getName()+": onCompleted의 쓰레드")
+
+                );
     }
 
     private void startExample07() {
